@@ -12,19 +12,19 @@ using JLD2
 #f=jldopen("./data/Full Fledged/data16x16full.jld2","r")
 
 #f=jldopen("./data/fullres/data8x8fullresbind_1.jld2","r")
-f=jldopen("./data/fullres/data4x4fullresbind1.jld2","r")
-mag_temp = f["mag_temp"].s
-skyrm_temp = f["skyrm_temp"].s
-skyrm_err_temp = f["skyrm_err_temp"].s
-mag_err_temp = f["mag_err_temp"].s
-magbind_temp = f["magbind_temp"].s
-magbind_err_temp = f["magbind_err_temp"].s
-skyrmbind_temp = f["skyrmbind_temp"].s
-skyrmbind_err_temp = f["skyrmbind_err_temp"].s
+#f=jldopen("./data/fullres/data4x4fullresbind1.jld2","r")
+#mag_temp = f["mag_temp"].s
+#skyrm_temp = f["skyrm_temp"].s
+#skyrm_err_temp = f["skyrm_err_temp"].s
+#mag_err_temp = f["mag_err_temp"].s
+#magbind_temp = f["magbind_temp"].s
+#magbind_err_temp = f["magbind_err_temp"].s
+#skyrmbind_temp = f["skyrmbind_temp"].s
+#skyrmbind_err_temp = f["skyrmbind_err_temp"].s
 
-N = f["N"]
-Temperature = f["Temperature"]
-J_space = f["J_space"]
+#N = f["N"]
+#Temperature = f["Temperature"]
+#J_space = f["J_space"]
 
 
 #jstart = 5

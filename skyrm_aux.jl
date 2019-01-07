@@ -14,7 +14,6 @@ end
 
 function initialise(M::Int, N::Int)
     """ Initialising the lattice with random values """
-    #lat = Array{Float64, 3}(N, N)
     lat = Array{Vector{Float64},2}(undef,M, N);
     for i = 1:M
         for j = 1:N
@@ -32,7 +31,7 @@ function myplus(a,b,N)
     return c
 end
 
-function energy_pos(x, y, J, lat, a = [0,0,0])
+function energy_pos(x, y, Q, lat, a = [0,0,0])
     M = size(lat,1)
     N = size(lat,2)
 
@@ -46,20 +45,19 @@ function energy_pos(x, y, J, lat, a = [0,0,0])
     llc = lat[myplus(x,1,N),myplus(y,-1,N)]
 
     energy = -1*(1-dot(lat[x,y],(right+down)))
-    energy = energy - J*( (1-dot(lat[x,y],down))*(1-dot(right,lrc)) + (1-dot(lat[x,y],right))*(1-dot(down,lrc)) )
+    energy = energy - Q*( (1-dot(lat[x,y],down))*(1-dot(right,lrc)) + (1-dot(lat[x,y],right))*(1-dot(down,lrc)) )
 
     return energy
 end
 
-function test_flip(x, y, J, lat, T)
+function test_flip(x, y, Q, lat, T)
 """ Checks whether energy allows for a flip or not """
-    #a = sample_uni()
     N = size(lat,1)
-    de = -energy_pos(x,y,J,lat)-energy_pos(myplus(x,-1,N),y,J,lat)-energy_pos(myplus(x,-1,N),myplus(y,-1,N),J,lat)-energy_pos(x,myplus(y,-1,N),J,lat)
+    de = -energy_pos(x,y,Q,lat)-energy_pos(myplus(x,-1,N),y,Q,lat)-energy_pos(myplus(x,-1,N),myplus(y,-1,N),Q,lat)-energy_pos(x,myplus(y,-1,N),Q,lat)
     a0 = lat[x,y]
     a = sample_gauss(lat[x,y])
     lat[x,y] = a
-    de = de + energy_pos(x,y,J,lat)+energy_pos(myplus(x,-1,N),y,J,lat)+energy_pos(myplus(x,-1,N),myplus(y,-1,N),J,lat)+energy_pos(x,myplus(y,-1,N),J,lat)
+    de = de + energy_pos(x,y,Q,lat)+energy_pos(myplus(x,-1,N),y,Q,lat)+energy_pos(myplus(x,-1,N),myplus(y,-1,N),Q,lat)+energy_pos(x,myplus(y,-1,N),Q,lat)
     if(de<0)
         return true
     elseif(rand()<exp(-de/T))
@@ -70,7 +68,7 @@ function test_flip(x, y, J, lat, T)
     end
 end
 
-function transient_results(lat, transient::Int, J, T)
+function transient_results(lat, transient::Int, Q, T)
     """Takes lat as input and removes initial transients by running for transient number of steps"""
     M = size(lat,1)
     N = size(lat,2)
@@ -78,7 +76,7 @@ function transient_results(lat, transient::Int, J, T)
         for j = 1:M*N
                 x = rand(1:M)
                 y = rand(1:N)
-                test_flip(x,y,J,lat,T)
+                test_flip(x,y,Q,lat,T)
         end
     end
 end
@@ -88,19 +86,14 @@ function total_mag(lat)
     return sum(lat)
 end
 
-function total_energy(J,lat)
+function total_energy(Q,lat)
     e = 0.0
     for i = 1:size(lat,1)
         for j = 1:size(lat,2)
-            e = e + energy_pos(i,j,J,lat)
+            e = e + energy_pos(i,j,Q,lat)
         end
     end
     return e/2
-end
-
-function exact_heisen_energy(T)
-    #(e^(1/T) (-1 + T) T - e^(-1/T) T (1 + T))/(2 T sinh(1/T))
-    return (exp(1/T) * (-1 + T) * T - exp(-1/T) * T * (1 + T))/(2*T*sinh(1/T))
 end
 
 function jackknife(v)
@@ -237,21 +230,20 @@ function lat_transform(lat,latindex)
     end
 end
 
-function montecarlo(Temperature,N,J_space)
-    mcs = 75000
+function montecarlo(Temperature,N,Q_space)
+    mcs = 40000
     M = N
 
     normalisation=(1.0/float(M*N))
-    qFT = zeros(M,N,length(J_space))
 
-    JM_vec = zeros(length(Temperature),length(J_space),4,3)
-    JM_vec_err = zeros(length(Temperature),length(J_space),4,3)
-    Jskyrm_vec = zeros(length(Temperature),length(J_space),4,3)
-    Jskyrm_vec_err = zeros(length(Temperature),length(J_space),4,3)
-    Jmagbind_vec = zeros(length(Temperature),length(J_space),4)
-    Jskyrmbind_vec = zeros(length(Temperature),length(J_space),4)
-    Jmagbind_vec_err = zeros(length(Temperature),length(J_space),4)
-    Jskyrmbind_vec_err = zeros(length(Temperature),length(J_space),4)
+    JM_vec = zeros(length(Temperature),length(Q_space),4,3)
+    JM_vec_err = zeros(length(Temperature),length(Q_space),4,3)
+    Jskyrm_vec = zeros(length(Temperature),length(Q_space),4,3)
+    Jskyrm_vec_err = zeros(length(Temperature),length(Q_space),4,3)
+    Jmagbind_vec = zeros(length(Temperature),length(Q_space),4)
+    Jskyrmbind_vec = zeros(length(Temperature),length(Q_space),4)
+    Jmagbind_vec_err = zeros(length(Temperature),length(Q_space),4)
+    Jskyrmbind_vec_err = zeros(length(Temperature),length(Q_space),4)
 
     M_vec = zeros(length(Temperature),2,3,4)
     M_jack = zeros(mcs,3,4)
@@ -263,20 +255,20 @@ function montecarlo(Temperature,N,J_space)
     skyrmbind_vec = zeros(length(Temperature),2,4)
 
     #autocor_vec = 0
-    Jcount = 1
-    for J in J_space
+    Qcount = 1
+    for Q in Q_space
         lat = initialise(M,N)
         Tcount = 1
         for T in Temperature
-            transient_results(lat,3000,J,T)
-            E = total_energy(J,lat)
+            transient_results(lat,3000,Q,T)
+            E = total_energy(Q,lat)
             for i in 1:mcs
                 for j in 1:M*N
                     x = rand(1:M)
                     y = rand(1:N)
-                    E_0 = energy_pos(x,y,J,lat)
-                    if(test_flip(x,y,J,lat,T))
-                        E = E + energy_pos(x,y,J,lat) - E_0
+                    E_0 = energy_pos(x,y,Q,lat)
+                    if(test_flip(x,y,Q,lat,T))
+                        E = E + energy_pos(x,y,Q,lat) - E_0
                     end
                 end
 
@@ -310,7 +302,7 @@ function montecarlo(Temperature,N,J_space)
                     M_jack[i,3,latindex] = (norm(Mag)*normalisation).^4
 
                 end
-                #qFT[:,:,Jcount] = qFT[:,:,Jcount] + four_trans_skyrm(lat)
+                #qFT[:,:,Qcount] = qFT[:,:,Qcount] + four_trans_skyrm(lat)
             end
 
             for jj in 1:4
@@ -330,22 +322,22 @@ function montecarlo(Temperature,N,J_space)
 
         for jj in 1:4
             for ii in 1:3
-                Jskyrm_vec[:,Jcount,jj,ii] = skyrm_vec[:,1,ii,jj]
-                Jskyrm_vec_err[:,Jcount,jj,ii] = skyrm_vec[:,2,ii,jj]
+                Jskyrm_vec[:,Qcount,jj,ii] = skyrm_vec[:,1,ii,jj]
+                Jskyrm_vec_err[:,Qcount,jj,ii] = skyrm_vec[:,2,ii,jj]
 
-                JM_vec[:,Jcount,jj,ii] = M_vec[:,1,ii,jj]
-                JM_vec_err[:,Jcount,jj,ii] = M_vec[:,2,ii,jj]
+                JM_vec[:,Qcount,jj,ii] = M_vec[:,1,ii,jj]
+                JM_vec_err[:,Qcount,jj,ii] = M_vec[:,2,ii,jj]
             end
-            Jmagbind_vec[:,Jcount,jj] = magbind_vec[:,1,jj]
-            Jmagbind_vec_err[:,Jcount,jj] = magbind_vec[:,2,jj]
+            Jmagbind_vec[:,Qcount,jj] = magbind_vec[:,1,jj]
+            Jmagbind_vec_err[:,Qcount,jj] = magbind_vec[:,2,jj]
 
-            Jskyrmbind_vec[:,Jcount,jj] = skyrmbind_vec[:,1,jj]
-            Jskyrmbind_vec_err[:,Jcount,jj] = skyrmbind_vec[:,2,jj]
+            Jskyrmbind_vec[:,Qcount,jj] = skyrmbind_vec[:,1,jj]
+            Jskyrmbind_vec_err[:,Qcount,jj] = skyrmbind_vec[:,2,jj]
         end
 
-        Jcount = Jcount + 1
-        println("J_space:",J)
+        Qcount = Qcount + 1
+        println("Q_space:",Q)
     end
 
-    return Jskyrm_vec,Jskyrm_vec_err,JM_vec,JM_vec_err,Jmagbind_vec,Jmagbind_vec_err,Jskyrmbind_vec,Jskyrmbind_vec_err,qFT
+    return Jskyrm_vec,Jskyrm_vec_err,JM_vec,JM_vec_err,Jmagbind_vec,Jmagbind_vec_err,Jskyrmbind_vec,Jskyrmbind_vec_err
 end
