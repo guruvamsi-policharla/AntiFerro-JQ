@@ -1,12 +1,13 @@
 #Includes
 using Distributed
-#addprocs(6)
-addprocs(6)
+addprocs(4)
 println(nprocs())
-@everywhere using SharedArrays
-#@everywhere include("/home/guru/repos/antiFerro/skyrm_aux.jl")
-#@everywhere include("/home/vamsi/Github/Antiferro Skyrmion Jq/skyrm_aux.jl")
+
 @everywhere include("skyrm_aux.jl")
+@everywhere include("error_aux.jl")
+@everywhere include("energy_aux.jl")
+@everywhere include("lat_aux.jl")
+@everywhere using SharedArrays
 @everywhere using Distributions
 @everywhere using StatsBase
 @everywhere using LinearAlgebra
