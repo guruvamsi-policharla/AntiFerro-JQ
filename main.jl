@@ -1,6 +1,6 @@
 #Includes
 using Distributed
-addprocs(4)
+addprocs(8)
 println(nprocs())
 
 @everywhere include("skyrm_aux.jl")
@@ -17,7 +17,7 @@ using Dates
 Tmin = 0.1
 Tchange = 0.2
 Tmax = 2
-N = 8
+N = 4
 Temperature = Tmin:Tchange:Tmax
 
 J_space = [0.0:0.1:0.3;0.35:0.02:0.65;0.7:0.1:1]

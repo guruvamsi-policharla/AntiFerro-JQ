@@ -93,7 +93,7 @@ function transient_results(lat, transient::Int, J, T)
 end
 
 function montecarlo(Temperature,N,J_space)
-    mcs = 25
+    mcs = 50000
     M = N
 
     normalisation=(1.0/float(M*N))
