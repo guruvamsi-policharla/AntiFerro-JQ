@@ -24,9 +24,9 @@ function energy_pos(x, y, Q, lat, a = [0,0,0])
     lrc = lat[myplus(x,1,N),myplus(y,1,N)]
     llc = lat[myplus(x,1,N),myplus(y,-1,N)]
 
-    #energy = -2*(1-dot(lat[x,y],(right+down)))#2 is since we will be dividing by 2 later on
+    energy = -2*(1-dot(lat[x,y],(right+down)))#2 is since we will be dividing by 2 later on
 
-    energy = 2*(1-dot(lat[x,y],(right+down)))#Changing sign of J to check for consistency
+    #energy = 2*(1-dot(lat[x,y],(right+down)))#Changing sign of J to check for consistency
     energy = energy - Q*( (1-dot(lat[x,y],down))*(1-dot(right,lrc)) + (1-dot(lat[x,y],right))*(1-dot(down,lrc)) )
 
     return energy
@@ -40,6 +40,7 @@ function test_flip(x, y, Q, lat, T)
     a = sample_gauss(lat[x,y])
 
     lat[x,y] = a
+
     de = de + energy_pos(x,y,Q,lat)+energy_pos(myplus(x,-1,N),y,Q,lat)+energy_pos(myplus(x,-1,N),myplus(y,-1,N),Q,lat)+energy_pos(x,myplus(y,-1,N),Q,lat)
     de = de/2
 

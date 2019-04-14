@@ -93,20 +93,21 @@ function transient_results(lat, transient::Int, J, T)
 end
 
 function montecarlo(Temperature,N,J_space)
-    mcs = 50000
+    mcs = 7000
     M = N
 
     normalisation=(1.0/float(M*N))
 
-    JM_vec = zeros(length(Temperature),length(J_space),4,3)
-    JM_vec_err = zeros(length(Temperature),length(J_space),4,3)
-    Jskyrm_vec = zeros(length(Temperature),length(J_space),4,3)
-    Jskyrm_vec_err = zeros(length(Temperature),length(J_space),4,3)
-    Jmagbind_vec = zeros(length(Temperature),length(J_space),4)
-    Jskyrmbind_vec = zeros(length(Temperature),length(J_space),4)
-    Jmagbind_vec_err = zeros(length(Temperature),length(J_space),4)
-    Jskyrmbind_vec_err = zeros(length(Temperature),length(J_space),4)
+    JE_vec = zeros(length(Temperature),length(J_space),4,3,2)
+    JM_vec = zeros(length(Temperature),length(J_space),4,3,2)
+    Jskyrm_vec = zeros(length(Temperature),length(J_space),4,3,2)
+
+    Jmagbind_vec = zeros(length(Temperature),length(J_space),4,2)
+    Jskyrmbind_vec = zeros(length(Temperature),length(J_space),4,2)
 #################################################################
+    E_vec = zeros(length(Temperature),2,3,4)
+    E_jack = zeros(mcs,3,4)
+
     M_vec = zeros(length(Temperature),2,3,4)
     M_jack = zeros(mcs,3,4)
 
@@ -116,7 +117,6 @@ function montecarlo(Temperature,N,J_space)
     magbind_vec = zeros(length(Temperature),2,4)
     skyrmbind_vec = zeros(length(Temperature),2,4)
 
-    #autocor_vec = 0
     Jcount = 1
     for J in J_space
         lat = initialise(M,N)
@@ -128,30 +128,31 @@ function montecarlo(Temperature,N,J_space)
                 for j in 1:M*N
                     x = rand(1:M)
                     y = rand(1:N)
-                    E_0 = energy_pos(x,y,J,lat)
-                    if(test_flip(x,y,J,lat,T))
-                        E = E + energy_pos(x,y,J,lat) - E_0
-                    end
+                    test_flip(x,y,J,lat,T)
                 end
 
                 for latindex in 1:4
                     if latindex == 1
                         skyrm_num = skyrmion_number(lat)
                         Mag = total_mag(lat)
+                        E = total_energy(J,lat)
                     elseif latindex == 2
                         lat_transform(lat,latindex)
                         skyrm_num = skyrmion_number(lat)
                         Mag = total_mag(lat)
+                        E = total_energy(J,lat)
                         lat_transform(lat,latindex)
                     elseif latindex == 3
                         lat_transform(lat,latindex)
                         skyrm_num = skyrmion_number(lat)
                         Mag = total_mag(lat)
+                        E = total_energy(J,lat)
                         lat_transform(lat,latindex)
                     elseif latindex == 4
                         lat_transform(lat,latindex)
                         skyrm_num = skyrmion_number(lat)
                         Mag = total_mag(lat)
+                        E = total_energy(J,lat)
                         lat_transform(lat,latindex)
                     end
 
@@ -163,6 +164,9 @@ function montecarlo(Temperature,N,J_space)
                     M_jack[i,2,latindex] = (norm(Mag)*normalisation).^2
                     M_jack[i,3,latindex] = (norm(Mag)*normalisation).^4
 
+                    E_jack[i,1,latindex] = (E*normalisation)
+                    E_jack[i,2,latindex] = (E*normalisation).^2
+                    E_jack[i,3,latindex] = (E*normalisation).^4
                 end
             end
 
@@ -171,9 +175,11 @@ function montecarlo(Temperature,N,J_space)
                     if jj == 2
                         skyrm_vec[Tcount,1,ii,jj], skyrm_vec[Tcount,2,ii,jj] = jackknife((skyrm_jack[:,ii,jj]+skyrm_jack[:,ii,jj+1])./2)
                         M_vec[Tcount,1,ii,jj], M_vec[Tcount,2,ii,jj] = jackknife((M_jack[:,ii,jj]+M_jack[:,ii,jj+1])./2)
+                        E_vec[Tcount,1,ii,jj], E_vec[Tcount,2,ii,jj] = jackknife((E_jack[:,ii,jj]+E_jack[:,ii,jj+1])./2)
                     else
                         skyrm_vec[Tcount,1,ii,jj], skyrm_vec[Tcount,2,ii,jj] = jackknife(skyrm_jack[:,ii,jj])
                         M_vec[Tcount,1,ii,jj], M_vec[Tcount,2,ii,jj] = jackknife(M_jack[:,ii,jj])
+                        E_vec[Tcount,1,ii,jj], E_vec[Tcount,2,ii,jj] = jackknife(E_jack[:,ii,jj])
                     end
                 end
                 if jj == 2
@@ -185,31 +191,30 @@ function montecarlo(Temperature,N,J_space)
                 end
 	    end
             Tcount = Tcount + 1
-
-            #if T == Tmin
-            #    autocor_vec = autocor(skyrm_jack)
-            #end
         end
 
         for jj in 1:4
             for ii in 1:3
-                Jskyrm_vec[:,Jcount,jj,ii] = skyrm_vec[:,1,ii,jj]
-                Jskyrm_vec_err[:,Jcount,jj,ii] = skyrm_vec[:,2,ii,jj]
+                Jskyrm_vec[:,Jcount,jj,ii,1] = skyrm_vec[:,1,ii,jj]
+                Jskyrm_vec[:,Jcount,jj,ii,2] = skyrm_vec[:,2,ii,jj]
 
-                JM_vec[:,Jcount,jj,ii] = M_vec[:,1,ii,jj]
-                JM_vec_err[:,Jcount,jj,ii] = M_vec[:,2,ii,jj]
+                JM_vec[:,Jcount,jj,ii,1] = M_vec[:,1,ii,jj]
+                JM_vec[:,Jcount,jj,ii,2] = M_vec[:,2,ii,jj]
+
+                JE_vec[:,Jcount,jj,ii,1] = E_vec[:,1,ii,jj]
+                JE_vec[:,Jcount,jj,ii,2] = E_vec[:,2,ii,jj]
             end
-            Jmagbind_vec[:,Jcount,jj] = magbind_vec[:,1,jj]
-            Jmagbind_vec_err[:,Jcount,jj] = magbind_vec[:,2,jj]
+            Jmagbind_vec[:,Jcount,jj,1] = magbind_vec[:,1,jj]
+            Jmagbind_vec[:,Jcount,jj,2] = magbind_vec[:,2,jj]
 
-            Jskyrmbind_vec[:,Jcount,jj] = skyrmbind_vec[:,1,jj]
-            Jskyrmbind_vec_err[:,Jcount,jj] = skyrmbind_vec[:,2,jj]
+            Jskyrmbind_vec[:,Jcount,jj,1] = skyrmbind_vec[:,1,jj]
+            Jskyrmbind_vec[:,Jcount,jj,2] = skyrmbind_vec[:,2,jj]
         end
 
         Jcount = Jcount + 1
         println("J_space:",J)
     end
 
-    return Jskyrm_vec,Jskyrm_vec_err,JM_vec,JM_vec_err,Jmagbind_vec,Jmagbind_vec_err,Jskyrmbind_vec,Jskyrmbind_vec_err
+    return JE_vec,Jskyrm_vec,JM_vec,Jmagbind_vec,Jskyrmbind_vec
 
 end

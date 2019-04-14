@@ -3,7 +3,7 @@ function jackknife(v)
     n = length(v)
     vec_jack = (s .- v)/(n-1)
     jack_avg = mean(vec_jack)
-    jack_err = sqrt((mean(vec_jack.^2) .- jack_avg.^2) * (n-1))
+    jack_err = sqrt(abs(mean(vec_jack.^2) .- jack_avg.^2) * (n-1)) #abs since the error is too small
     return jack_avg,jack_err
 end
 
