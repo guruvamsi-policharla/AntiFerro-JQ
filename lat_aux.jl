@@ -117,14 +117,15 @@ function montecarlo(Temperature,N,J_space)
     magbind_vec = zeros(length(Temperature),2,4)
     skyrmbind_vec = zeros(length(Temperature),2,4)
 
+    #autocor_vec = 0
     Jcount = 1
     for J in J_space
         lat = initialise(M,N)
         Tcount = 1
         for T in Temperature
             transient_results(lat,3000,J,T)
-            E = total_energy(J,lat)
             for i in 1:mcs
+
                 for j in 1:M*N
                     x = rand(1:M)
                     y = rand(1:N)
@@ -183,8 +184,8 @@ function montecarlo(Temperature,N,J_space)
                     end
                 end
                 if jj == 2
-                    magbind_vec[Tcount,1,jj],magbind_vec[Tcount,2,jj] = bindjack((M_jack[:,3,jj]+M_jack[:,3,jj+1])./2,(M_jack[:,2,jj]+M_jack[:,2,jj+1])./2)
-                    skyrmbind_vec[Tcount,1,jj],skyrmbind_vec[Tcount,2,jj] = bindjack((skyrm_jack[:,3,jj]+skyrm_jack[:,3,jj+1])./2,(skyrm_jack[:,2,jj]+skyrm_jack[:,2,jj+1])./2)
+                    magbind_vec[Tcount,1,jj],magbind_vec[Tcount,2,jj] = (bindjack(M_jack[:,3,jj],M_jack[:,2,jj])+bindjack(M_jack[:,3,jj+1],M_jack[:,2,jj+1]))/2
+                    skyrmbind_vec[Tcount,1,jj],skyrmbind_vec[Tcount,2,jj] = (bindjack(skyrm_jack[:,3,jj],skyrm_jack[:,2,jj])+bindjack(skyrm_jack[:,3,jj+1],skyrm_jack[:,2,jj+1]))/2
                 else
                     magbind_vec[Tcount,1,jj],magbind_vec[Tcount,2,jj] = bindjack(M_jack[:,3,jj],M_jack[:,2,jj])
                     skyrmbind_vec[Tcount,1,jj],skyrmbind_vec[Tcount,2,jj] = bindjack(skyrm_jack[:,3,jj],skyrm_jack[:,2,jj])

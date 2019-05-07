@@ -1,7 +1,7 @@
 #Includes
 using Distributed
-#addprocs(Sys.CPU_THREADS)
-addprocs(8)
+addprocs(Sys.CPU_THREADS)
+#addprocs(7)
 println(nprocs())
 
 #@everywhere include("/home/guru/repos/AntiFerro-Lattices/skyrm_aux.jl")
